@@ -260,6 +260,14 @@ const createDefaultImplementation = ({ strapi, db, eventHub, entityValidator }) 
     return deletedEntities;
   },
 
+  loadMany(uid, entities, field, params = {}) {
+    if (!_.isString(field)) {
+      throw new Error(`Invalid load. Expected "${field}" to be a string`);
+    }
+
+    return db.query(uid).loadMany(entities, field, transformLoadParamsToQuery(uid, field, params));
+  },
+
   load(uid, entity, field, params = {}) {
     if (!_.isString(field)) {
       throw new Error(`Invalid load. Expected "${field}" to be a string`);

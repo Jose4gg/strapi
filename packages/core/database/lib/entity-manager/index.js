@@ -1122,6 +1122,38 @@ const createEntityManager = (db) => {
       return { ...entity, ...entry };
     },
 
+    async loadMany(uid, entities, fields, params) {
+      const { attributes } = db.metadata.get(uid);
+
+      const fieldsArr = castArray(fields);
+      fieldsArr.forEach((field) => {
+        const attribute = attributes[field];
+
+        if (!attribute || attribute.type !== 'relation') {
+          throw new Error(`Invalid load. Expected ${field} to be a relational attribute`);
+        }
+      });
+
+      const entries = await this.findMany(uid, {
+        select: ['id'],
+        where: { id: entities.map((entity) => entity.id) },
+        populate: fieldsArr.reduce((acc, field) => {
+          acc[field] = params || true;
+          return acc;
+        }, {}),
+      });
+
+      if (isEmpty(entries)) {
+        return [];
+      }
+
+      if (Array.isArray(fields)) {
+        return entries.map((entry) => pick(fields, entry));
+      }
+
+      return entries.map((entry) => entry[fields]);
+    },
+
     // TODO: add lifecycle events
     async load(uid, entity, fields, params) {
       const { attributes } = db.metadata.get(uid);

@@ -108,6 +108,10 @@ const createRepository = (uid, db) => {
       return db.entityManager.populate(uid, entity, populate);
     },
 
+    loadMany(entities, fields, params) {
+      return db.entityManager.loadMany(uid, entities, fields, params);
+    },
+
     load(entity, fields, params) {
       return db.entityManager.load(uid, entity, fields, params);
     },

@@ -11,6 +11,9 @@ const {
 const depthLimit = require('graphql-depth-limit');
 const { graphqlUploadKoa } = require('graphql-upload');
 const formatGraphqlError = require('./format-graphql-error');
+const {
+  buildAssociationDataloader,
+} = require('./services/builders/resolvers/association_dataloader');
 
 const merge = mergeWith((a, b) => {
   if (isArray(a) && isArray(b)) {
@@ -54,10 +57,31 @@ module.exports = async ({ strapi }) => {
     schema,
 
     // Initialize loaders for this request.
-    context: ({ ctx }) => ({
-      state: ctx.state,
-      koaContext: ctx,
-    }),
+    context({ ctx }) {
+      const associationDataloaders = {};
+
+      for (const contentType of strapi.container.get('content-types').keys()) {
+        associationDataloaders[`association::${contentType}`] = {
+          init({ contentTypeUID, attributeName, strapi }) {
+            if (!this.dataloader) {
+              this.dataloader = buildAssociationDataloader({
+                attributeName,
+                contentTypeUID,
+                strapi,
+              });
+            }
+
+            return this.dataloader;
+          },
+        };
+      }
+
+      return {
+        state: ctx.state,
+        koaContext: ctx,
+        ...associationDataloaders,
+      };
+    },
 
     // Validation
     validationRules: [depthLimit(config('depthLimit'))],
